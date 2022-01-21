@@ -1,0 +1,6 @@
+{
+    "require": {
+        "slim/slim": "^3.0",
+        "paragonie/random_compat": "^2.0"
+    }
+}

@@ -1,0 +1,13 @@
+#RewriteEngine On
+#RewriteCond %{REQUEST_FILENAME} !-f
+#RewriteCond %{REQUEST_FILENAME} !-d
+#RewriteRule ^ api/./api.php [QSA,L]
+#<IfModule mod_rewrite.c>
+#    RewriteEngine On
+#    RewriteRule ^.*$ htaccess_tester.php
+#</IfModule>
+
+<files include/config.ini>
+order allow,deny
+deny from all
+</files>

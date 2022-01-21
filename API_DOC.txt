@@ -1,0 +1,398 @@
+Documentation
+URL: http://homepages.cs.ncl.ac.uk/2016-17/csc2022_team09/api/api.php
+
+v1
+
+URL: http://homepages.cs.ncl.ac.uk/2016-17/csc2022_team09/api/api.php/v1
+
+At the moment resource views show subresources fully nested by default
+It might be better to show subresources as uri's pointing to that resource.
+Its currently set this way for the organiser resource as an example
+
+Guide to play around with the API directly:
+
+install postman, or similar http client
+
+set headers as so:
+set a header "Php-Auth-Token" with value "super_secret"
+set an "Accept" header with value "application/json"
+if you want to POST set a "Content-Type" header with value"application/json"
+see API_headers screenshot as an example
+
+Go to http://homepages.cs.ncl.ac.uk/2016-17/csc2022_team09/api/api.php/v1/organisers and you should see a collection of Organiser resources
+Then explore any of the other enpoints using the documentation!
+
+
+KEY
+text inside a  "{}" e.g "{id}" denotes a variable to be replaced, e.g
+/v1/organisers/{organiser_id}/active_treasure_hunts
+could mean:
+/v1/organisers/1/active_treasure_hunts
+to access the active_treasure_hunts of organiser with id 1
+
+Webportal / Organiser Side
+
+________________________________________________________________________________________________________________________
+
+organiser resource:
+
+{
+    "id":
+    "full_name":
+    "last_name":
+    "username":
+    "password":
+    "token":
+    "active_treasure_hunts": subresource collection
+    "treasure_hunts_templates": subresource collection
+    "teams": subresource collection
+}
+
+GET     /v1/organisers                      shows collection of organisers
+
+POST    /v1/origanisers                      organiser signup, creates an organiser resource
+required ["username", "password"]
+allowed  ["first_name", "last_name", "username", "password"]
+    username value validation:
+        must be between 3 and 16 characters, accepts alphanumeric characters, "-" and "_"
+        regex: "/^[a-z0-9_-]{3,16}$/"
+    password value validation:
+        must be between 6 and 18 characters accept  alphanumeric characters, "-" and "_"
+        regex: "/^[a-z0-9_-]{6,18}$/"
+
+POST /v1/organisers/login                    organiser login, if password is correct will generate a token
+                                             and return the organiser resource identified by the username
+required ["username", "password"]
+allowed ["username", "password"]
+
+GET     /v1/organisers/{id}                  shows organiser resource specified by id
+
+__________________________________________________________________________________________________________________________
+
+treasure_hunt_template resource
+
+{
+    "id":
+    "name":
+    "organiser_id":
+    "treasures": subresource collection
+}
+
+GET         /v1/organisers/{organiser_id}/treasure_hunt_templates               shows collection of treasure_hunt_templates
+
+POST        /v1/organisers/{organiser_id}/treasure_hunt_templates               create treasure_hunt_template resource
+required ["name"]
+allowed  ["name"]
+
+GET         /v1/organisers/{organiser_id}/treasure_hunt_templates/{id}           shows treasure_hunt_template resource specified by id
+
+________________________________________________________________________________________________________________________________
+
+teasure resource
+
+{
+    "id":
+    "clue":
+    "latitude":
+    "longitude":
+    "difficulty":
+    "default_order":
+    "qr_code":
+    "treasure_hunt_template_id":
+}
+
+GET         /v1/organisers/{organiser_id}/treasure_hunt_templates/{id}/treasures                 shows collection of treasures
+
+POST         /v1/organisers/{organiser_id}/treasure_hunt_templates/{id}/treasures                creates treasure resource belonging to
+                                                                                                 specified treasure_hunt_template
+required ['clue', 'latitude', 'longitude', 'difficulty', 'default_order']
+allowed  ['clue', 'latitude', 'longitude', 'difficulty', 'default_order']
+
+GET         /v1/organisers/{organiser_id}/treasure_hunt_templates/{id}/treasures{id}             shows treasure resource specified by id
+
+________________________________________________________________________________________________________________________________
+
+active_treasure_hunt resource
+
+{
+    "id":
+    "is_started":
+    "start_time":
+    "is_finished":
+    "finish_time":
+    "organiser_id":
+    "treasure_hunts_template_id"
+    "teams": subresource collection
+}
+
+GET         /v1/organisers/{organiser_id}/active_treasure_hunts                     shows collection of active_treasure_hunts
+
+POST        /v1/organisers/{organiser_id}/active_treasure_hunts                     creates new active_treasure_hunts resource belonging to the organiser
+                                                                                    identified by organiser_id
+required ["name, "treasure_hunt_template_id"]
+allowed  ["name", "treasure_hunt_template_id"]
+
+GET         /v1/organisers/{organiser_id}/active_treasure_hunts/{id}                shows active_treasure_hunt resource specified by id, belonging to organiser
+
+POST         /v1/organisers/{organiser_id}/active_treasure_hunts/{id}/start          will start the active treasure hunt, will alocate the treasures from
+                                                                                     the treasure_hunt_template this hunt uses to all participating teams
+                                                                                    players will then be able to view and collect treasures for their team.
+                                                                                     if use_dynamic_allocation is set to false (0) treasures will
+                                                                                    remain in their default order for users to collect. if set to true
+                                                                                    the treasure order will be scrambled for each team except for
+                                                                                    the final treasure which will be the same for all teams.
+required ['use_dynamic_allocation']
+allowed ['use_dynamic_allocation']
+
+POST         /v1/organisers/{organiser_id}/active_treasure_hunts/{id}/stop           will end the active treasure hunt, players will no longer be able
+                                                                                     to collect treasures, will set is finished and is started
+____________________________________________________________________________________________________________________________________
+
+
+Team resource
+{
+    "id":
+    "name":
+    "current_treasure_index":
+    "score":
+    "public_team_code":
+    "max_players":
+    "active_treasure_hunt_id":
+    "players":   subresource collection
+}
+
+GET         /v1/active_treasure_hunts/{id}/teams                                gets teams belonging to the specified active_treasure_hunt
+
+POST        /v1/active_treasure_hunts/{id}/teams                                creates new team belonging to the specified active_treasure_hunt
+required ["name, "max_players"]
+allowed  ["name, "max_players"]
+
+GET         /v1/active_treasure_hunts/{id}/teams/{id}                           gets the team resource specified by the id
+
+GET         /v1/teams/{id}                                                      gets the team resource specified by the id
+
+
+POST         /v1/active_treasure_hunts/{id}/teams/{id}/hot_or_cold              returns a value between 0 (cold) and 1(hot) indicating how hot or
+                                                                                cold the given coords position is from the teams current treasure
+required ["latitude", "longitude"]
+allowed  ["latitude", "longitude"]
+________________________________________________________________________________________________________________________________________________
+
+
+
+
+
+
+
+
+
+_______________________________________________________________________________________________________________________________________
+
+
+App side
+
+_____________________________________________________________________________________________________________________________________
+
+player resource
+{
+    "id":
+    "name":
+    "team_id":
+    "token":
+}
+
+GET         /v1/active_treasure_hunts/{id}/teams/{id}/players                               gets players belongs to the specified team
+
+POST        /v1/teams/jointeam                                                              creates new player belonging to the team specified
+                                                                                            by the public_team_code, and generates a token for
+                                                                                            the player which is returned as part of the player
+                                                                                            you resource you just created
+required ["public_team_code", "name"]
+allowed  ["public_team_code", "name"]
+
+
+GET         /v1/active_treasure_hunts/{id}/teams/{id}/players/{id}                          gets the player resource specified by the id
+
+_______________________________________________________________________________________________________________________________________
+
+collectable_treasure resource
+
+{
+          "team_id":
+          "clue":
+          "latitude":
+          "longitude":
+          "has_been_found":
+          "order":
+          "score":
+          "found_time":
+}
+
+GET         /v1/active_treasure_hunts/{id}/teams/{id}/collectable_treasures     gets list of treasures this team needs to collect
+
+POST        /v1/active_treasure_hunts/{id}/teams/{id}/collect_treasure          collects the current treasure for this team if qr code is correct (hardcoded to "test" atm)
+                                                                                and the lat/long are in range of the treasure. Returns back the treasure you just collected.
+                                                                                with found details set, also updates team resource, increments the teams current_treasure_index
+                                                                                by 1 and the score is incremented by the score of the treasure just collected
+required ["latitude", "longitude", "qr_code"]
+allowed  ["latitude", "longitude", "qr_code"]
+
+
+_______________________________________________________________________________________________________________________________________
+feedback resource
+
+{
+    "id":
+    "submit_time":
+    "active_treasure_hunt_id":
+    "player_token":
+
+    questions 1 - 14
+    e.g
+    "question_1":
+    "question_2":
+    etc
+}
+
+GET         /v1/feedback                                                            shows collection of feedback submissions
+
+POST        /v1/organisers/{organiser_id}/active_treasure_hunts                     create a new feedback submission, submiting a feedback form
+                                                                                     will earn 2 points for the players team
+
+
+________________________________________________________________________________________________________________________________________________
+
+
+
+
+
+
+________________________________________________________________________________________________________________________________________________
+
+Auth
+
+________________________________________________________________________________________________________________________________________________
+
+
+"Php-Auth-Token" header is used to authorise the user as either a player, organiser, or admin
+
+e.g setting a header with key "Php-Auth-Token" and value "super_secret" will authenticate the user as admin
+
+To authenticate as a organiser: create organiser at "/v1/organisers", then login at "/v1/organisers/login",
+use the token returned as part of the organiser resource following login as your Php-Auth-Token
+
+To authenticate as a player: create player at "/v1/teams/jointeam", use the token returned as part of the player resource
+as the Php-Auth-Token
+
+To authenticate as admin set header to Php-Auth-Token header to "super_secret"
+
+Authorisation Levels are affected by the resource being accessed
+
+base_access                     - no auth token
+
+admin_access                    - authorised as admin
+
+organiser_access                - authorised as this organiser
+
+treasure_hunt_template_access   - authorised as organiser, you own this treasure_hunt_template
+
+organiser_active_hunt_access    - authorised as organiser, you own this active_treasure_hunt
+
+player_access                   - authorised as this player
+
+team_access                     - authorised as player, you belong to this team
+
+hunt_access                     - authorised as player, you are participating in this active_treasure_hunt
+
+current_treasure_access         - authorised as player, your team is currently looking for this treasure
+
+found_treasure_access           - authorsed as player, your team has found this treasure
+
+not_found_treasure_access       - authorsed as player, your team has not found this treasure, and is not currently looking for it
+
+e.g when atempting to access player resource, if the user has "team_access"
+it means they belong to the same team as the player resource they are trying to access
+
+
+Resource Access
+
+read view is everything if not otherwise specified
+
+organiser:
+    create - [base_access, admin_access]
+    login - [base_access, admin_access]
+    read - [organiser_access, admin_access]
+            view
+                {
+                    everything minus
+                    "password":
+                }
+
+treasure_hunt_template
+    create - [organiser_access, admin_access]
+    read - [treasure_hunt_template_access, admin_access]
+
+
+treasure
+        create - [treasure_hunt_template_access, admin_access]
+        read - [treasure_hunt_template_access, admin_access]
+
+active_treasure_hunt
+    create - [organiser_access, admin_access]
+    read - [organiser_active_hunt_access, admin_access]
+
+team
+    create - [organiser_active_hunt_access, admin_access]
+    read - [organiser_active_hunt_access, admin_access, team_access]
+            {
+                FULL
+            }
+            [hunt_access]
+            {
+                "id":
+                "name":
+                "current_treasure_index":
+                "score":
+                "active_treasure_hunt_id":
+            }
+
+
+player
+    create - [base_access]
+    read - [player]
+            {
+                FULL
+            }
+            [admin_access]
+            {
+                FULL
+                minus token
+            }
+            [team_access, organiser_active_hunt_access]
+            {
+                "id":
+                "name":
+            }
+
+
+collectable_treasure
+    create - [organiser_access, admin_access]
+    read - [found_treasure_access, organiser_active_hunt_access, admin_access ]
+            {
+                FULL
+            }
+
+            [current_treasure_access]
+            {
+                "team_id":
+                "clue":
+                "has_been_found":
+                "order":
+                "score":
+            }
+            [not_found_treasure_access]
+            {
+                "team_id":
+                "has_been_found":
+                "order":
+            }
